@@ -1,0 +1,104 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Genre {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  artists ArtistGenre[]
+
+  @@map("genres")
+}
+
+model Artist {
+  id            String   @id @default(cuid())
+  name          String
+  sortName      String?
+  musicbrainzId String?  @unique
+  imageUrl      String?
+  bio           String?
+  country       String?
+  formedYear    Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  albums Album[]
+  genres ArtistGenre[]
+
+  @@index([name])
+  @@map("artists")
+}
+
+model ArtistGenre {
+  artistId String
+  genreId  String
+
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  genre  Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([artistId, genreId])
+  @@map("artist_genres")
+}
+
+enum AlbumType {
+  ALBUM
+  EP
+  SINGLE
+  COMPILATION
+  LIVE
+}
+
+model Album {
+  id            String    @id @default(cuid())
+  title         String
+  type          AlbumType @default(ALBUM)
+  releaseDate   DateTime?
+  coverUrl      String?
+  musicbrainzId String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  artistId String
+  artist   Artist  @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  tracks   Track[]
+
+  @@index([artistId])
+  @@map("albums")
+}
+
+model Track {
+  id            String  @id @default(cuid())
+  title         String
+  trackNumber   Int?
+  discNumber    Int?
+  durationMs    Int?
+  musicbrainzId String? @unique
+
+  albumId String
+  album   Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  @@index([albumId])
+  @@map("tracks")
+}

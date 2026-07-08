@@ -27,13 +27,15 @@ Plataforma para catalogar discografias, acompanhar o que você ouve e avaliar á
 ## Getting started
 
 ```bash
-npm install
+cp .env.example .env   # preencha DATABASE_URL com sua instância PostgreSQL
+npm install             # roda "prisma generate" automaticamente (postinstall)
+npm run db:migrate      # aplica as migrations no banco
 npm run dev
 ```
 
 Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
-Copie `.env.example` para `.env.local` e preencha as variáveis conforme as integrações forem habilitadas (banco de dados, Auth.js, Spotify, MusicBrainz).
+Demais variáveis do `.env.example` (Auth.js, Spotify, MusicBrainz) serão preenchidas conforme as integrações forem habilitadas.
 
 ## Scripts
 
@@ -41,6 +43,8 @@ Copie `.env.example` para `.env.local` e preencha as variáveis conforme as inte
 - `npm run build` — build de produção
 - `npm run start` — inicia o build de produção
 - `npm run lint` — checagem de lint
+- `npm run db:migrate` — aplica migrations do Prisma no banco de dados
+- `npm run db:studio` — abre o Prisma Studio para inspecionar os dados
 
 ## Status
 
