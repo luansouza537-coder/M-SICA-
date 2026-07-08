@@ -1,0 +1,61 @@
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import Spotify from "next-auth/providers/spotify";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  // Credentials provider requires JWT sessions; database sessions are only
+  // supported for the OAuth (Spotify) flow under this adapter.
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+  },
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Senha", type: "password" },
+      },
+      authorize: async (credentials) => {
+        const email = credentials?.email;
+        const password = credentials?.password;
+        if (typeof email !== "string" || typeof password !== "string") {
+          return null;
+        }
+
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user?.password) {
+          return null;
+        }
+
+        const passwordMatches = await bcrypt.compare(password, user.password);
+        if (!passwordMatches) {
+          return null;
+        }
+
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
+      },
+    }),
+    Spotify({
+      clientId: process.env.SPOTIFY_CLIENT_ID,
+      clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+    }),
+  ],
+  callbacks: {
+    jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user && typeof token.id === "string") {
+        session.user.id = token.id;
+      }
+      return session;
+    },
+  },
+});
